@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TrueHelp - Real Help. Real Trust.</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --primary: #1F4E78;
+      --secondary: #10B981;
+      --bg: #F3F4F6;
+      --card-bg: #FFFFFF;
+      --text: #1F2937;
+      --text-muted: #6B7280;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, sans-serif; }
+    body { background-color: var(--bg); color: var(--text); display: flex; justify-content: center; min-height: 100vh; }
+    
+    .phone-container {
+      width: 100%;
+      max-width: 480px;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      min-height: 100vh;
+      box-shadow: 0 0 20px rgba(0,0,0,0.1);
+    }
+
+    .screen { display: none; width: 100%; padding: 20px; flex-direction: column; flex-grow: 1; }
+    .screen.active { display: flex; }
+
+    /* --- HTML/CSS VECTOR TRUEHELP LOGO SPLASH --- */
+    #intro-screen {
+      background: #ffffff;
+      justify-content: center;
+      align-items: center;
+      position: absolute;
+      z-index: 999;
+      top: 0; left: 0; right: 0; bottom: 0;
+    }
+    .logo-badge-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      animation: pulse 1.5s infinite ease-in-out;
+    }
+    .shield-emblem {
+      width: 130px;
+      height: 150px;
+      background: linear-gradient(135deg, #1F4E78, #133352);
+      clip-path: polygon(50% 0%, 100% 20%, 100% 75%, 50% 100%, 0% 75%, 0% 20%);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+      box-shadow: 0 10px 20px rgba(31,78,120,0.3);
+      border: 3px solid #ffffff;
+    }
+    .shield-inner-glow {
+      position: absolute;
+      width: 90%;
+      height: 92%;
+      background: transparent;
+      clip-path: polygon(50% 0%, 100% 20%, 100% 75%, 50% 100%, 0% 75%, 0% 20%);
+      border: 2px solid rgba(16, 185, 129, 0.4);
+      pointer-events: none;
+    }
+    .rupee-symbol-mark {
+      font-size: 42px;
+      font-weight: 800;
+      color: #10B981;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      margin-bottom: 2px;
+      z-index: 2;
+    }
+    .handshake-icon-mark {
+      font-size: 32px;
+      color: #ffffff;
+      z-index: 2;
+      background: linear-gradient(135deg, #10B981, #059669);
+      padding: 8px 14px;
+      border-radius: 50%;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+      border: 2px solid #ffffff;
+      margin-top: 5px;
+    }
+    .brand-text-intro {
+      font-size: 28px;
+      font-weight: 800;
+      color: #1F4E78;
+      margin-top: 18px;
+      letter-spacing: 0.5px;
+    }
+    .brand-text-intro span { color: #10B981; }
+    .brand-slogan-intro {
+      font-size: 11px;
+      font-weight: 700;
+      color: #6B7280;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-top: 4px;
+    }
+
+    /* --- FORM STYLE MODULES --- */
+    .auth-title { text-align: center; font-size: 26px; font-weight: 800; color: var(--primary); margin-bottom: 5px; }
+    .auth-subtitle { text-align: center; color: var(--secondary); font-size: 14px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 30px; }
+    
+    .card { background: var(--card-bg); padding: 25px; border-radius: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; }
+    .form-group { margin-bottom: 18px; }
+    .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--primary); }
+    .form-control { width: 100%; padding: 12px 16px; border: 1.5px solid #E5E7EB; border-radius: 10px; font-size: 15px; outline: none; transition: 0.2s; }
+    .form-control:focus { border-color: var(--primary); }
+    
+    .btn { background: var(--primary); color: white; border: none; width: 100%; padding: 14px; border-radius: 10px; font-size: 16px; font-weight: 600; cursor: pointer; transition: 0.2s; display: flex; justify-content: center; align-items: center; gap: 8px; }
+    .btn:active { transform: scale(0.98); }
+    .btn-secondary { background: var(--secondary); }
+    .btn-outline { background: transparent; border: 1.5px solid var(--primary); color: var(--primary); }
+
+    .header-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .user-info-tag { font-weight: bold; color: var(--primary); font-size: 14px; display: flex; align-items: center; gap: 6px; }
+    
+    .fund-card { background: linear-gradient(135deg, var(--primary), #2C6B9E); color: white; padding: 25px; border-radius: 16px; text-align: center; box-shadow: 0 8px 15px rgba(31,78,120,0.2); margin-bottom: 25px; }
+    .fund-card h3 { font-size: 14px; font-weight: 500; opacity: 0.9; text-transform: uppercase; letter-spacing: 0.5px; }
+    .fund-card h1 { font-size: 36px; font-weight: 800; margin-top: 5px; }
+
+    .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+    .action-grid .btn { padding: 16px 10px; font-size: 14px; flex-direction: column; border-radius: 14px; }
+    .action-grid .btn i { font-size: 20px; }
+    
+    .full-width-btn { margin-bottom: 25px; }
+
+    .section-title { font-size: 16px; font-weight: 700; color: var(--primary); margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+    .log-list { display: flex; flex-direction: column; gap: 10px; }
+    .log-item { background: white; padding: 14px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid #CBD5E1; }
+    .log-item.provide { border-left-color: var(--secondary); }
+    .log-item.get { border-left-color: #EF4444; }
+    .log-details div { font-weight: 700; font-size: 14px; color: var(--text); }
+    .log-details p { font-size: 12px; font-weight: 600; color: var(--primary); margin: 2px 0; }
+    .log-details span { font-size: 11px; color: var(--text-muted); }
+    .log-amount { text-align: right; }
+    .log-amount div { font-weight: 800; font-size: 16px; }
+    .log-amount span { font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
+    .status-success { background: #E2EFDA; color: #375623; }
+    .status-pending { background: #FFF2CC; color: #7F6000; }
+
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; padding: 20px; }
+    .modal-overlay.active { display: flex; }
+    .modal-card { background: white; width: 100%; max-width: 400px; border-radius: 20px; padding: 25px; position: relative; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.15); animation: slideUp 0.3s cubic-bezier(0.1, 0.8, 0.2, 1); }
+    
+    .modal-icon { width: 60px; height: 60px; background: #E2EFDA; color: var(--secondary); border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 28px; margin: 0 auto 15px; }
+    .modal-icon.alert-icon { background: #FFF2CC; color: #D4AF37; }
+    .modal-icon.danger-icon { background: #FEE2E2; color: #EF4444; }
+    .modal-bold-amt { font-size: 32px; font-weight: 800; color: var(--text); margin: 10px 0; }
+    
+    .detail-grid { text-align: left; background: #F9FAFB; padding: 14px; border-radius: 10px; margin: 15px 0; font-size: 13px; display: flex; flex-direction: column; gap: 8px; }
+    .detail-row { display: flex; justify-content: space-between; }
+    .detail-row span:first-child { color: var(--text-muted); }
+    .detail-row span:last-child { font-weight: 600; }
+
+    @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+    @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    
+    .loader { border: 3px solid #f3f3f3; border-top: 3px solid var(--primary); border-radius: 50%; width: 20px; height: 20px; animation: spin 0.8s linear infinite; display: inline-block; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+<div class="phone-container">
+
+  <!-- 1. INTRO SPLASH SCREEN -->
+  <div id="intro-screen" class="screen active">
+    <div class="logo-badge-container">
+      <div class="shield-emblem">
+        <div class="shield-inner-glow"></div>
+        <div class="rupee-symbol-mark">₹</div>
+        <div class="handshake-icon-mark"><i class="fa-solid fa-handshake"></i></div>
+      </div>
+      <h1 class="brand-text-intro">True<span>Help</span></h1>
+      <p class="brand-slogan-intro">Real Help. Real Trust.</p>
+    </div>
+  </div>
+
+  <!-- 2. LOGIN SCREEN -->
+  <div id="login-screen" class="screen">
+    <div style="margin-top: 40px;">
+      <h1 class="auth-title">TrueHelp</h1>
+      <p class="auth-subtitle">Real Help. Real Trust.</p>
+    </div>
+    <div class="card">
+      <div class="form-group">
+        <label>Enter Registered Mobile Number</label>
+        <input type="tel" id="login-mobile" class="form-control" placeholder="e.g. 9876543210" maxlength="10">
+      </div>
+      <button onclick="handleLoginSubmit()" class="btn" id="login-btn">Verify & Proceed</button>
+    </div>
+  </div>
+
+  <!-- 3. MAIN DASHBOARD SCREEN -->
+  <div id="dashboard-screen" class="screen">
+    <div class="header-bar">
+      <div class="user-info-tag"><i class="fa-solid fa-user-circle"></i> <span id="user-display-id">TH0000 - Name</span></div>
+      <button onclick="logout()" style="background:none; border:none; color:#EF4444; font-weight:600; font-size:14px;"><i class="fa-solid fa-sign-out-alt"></i></button>
+    </div>
+
+    <div class="fund-card">
+      <h3>Total TrueHelp Fund</h3>
+      <h1 id="total-fund-display">₹0.00</h1>
+    </div>
+
+    <div class="action-grid">
+      <button onclick="openProvideHelp()" class="btn btn-secondary"><i class="fa-solid fa-hand-holding-dollar"></i>Provide Help</button>
+      <button onclick="openGetHelp()" class="btn btn-outline"><i class="fa-solid fa-hand-holding-hand"></i>Get Help</button>
+    </div>
+    
+    <button onclick="openReferralPanel()" class="btn full-width-btn"><i class="fa-solid fa-users"></i> Referral Zone</button>
+
+    <div class="section-title"><i class="fa-solid fa-clock-rotate-left"></i> Transaction History </div>
+    <div class="log-list" id="history-log-container"></div>
+  </div>
+
+  <!-- 4. PROVIDE HELP FORM VIEW -->
+  <div id="provide-help-screen" class="screen">
+    <div class="section-title"><i class="fa-solid fa-arrow-left" onclick="showDashboard()"></i> Provide Assistance</div>
+    <div class="card">
+      <div class="form-group">
+        <label>Enter Contribution Amount (₹)</label>
+        <input type="number" id="p-amount" class="form-control" placeholder="Amount in Rupees">
+      </div>
+      <div class="form-group">
+        <label>Select App</label>
+        <select id="p-method" class="form-control">
+          <option value="PhonePe">PhonePe</option>
+          <option value="Paytm">Paytm</option>
+        </select>
+      </div>
+      <button onclick="triggerUPIPayment()" class="btn btn-secondary" style="margin-bottom:15px;">Pay Now</button>
+      
+      <div id="utr-section" class="hidden">
+        <div class="form-group" style="border-top: 1px dashed #CBD5E1; padding-top: 15px;">
+          <label style="color:#EF4444;">Paste UTR / Reference Number</label>
+          <input type="text" id="p-utr" class="form-control" placeholder="Enter Reference No.">
+        </div>
+        <button onclick="submitProvideHelpFinal()" class="btn">Submit Verification Proof</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. GET HELP FORM VIEW -->
+  <div id="get-help-screen" class="screen">
+    <div class="section-title"><i class="fa-solid fa-arrow-left" onclick="showDashboard()"></i> Request Assistance</div>
+    <div class="card">
+      <div class="form-group">
+        <label>Required Amount (₹)</label>
+        <input type="number" id="g-amount" class="form-control" placeholder="Enter Amount">
+      </div>
+      <div class="form-group">
+        <label>Transfer Method Mode</label>
+        <select id="g-method" class="form-control" onchange="toggleGetHelpFields()">
+          <option value="UPI">UPI ID</option>
+          <option value="Bank">Bank Account Transfer</option>
+        </select>
+      </div>
+      
+      <div id="g-upi-fields" class="form-group">
+        <label>Enter UPI ID</label>
+        <input type="text" id="g-upi" class="form-control" placeholder="example@upi">
+      </div>
+      
+      <div id="g-bank-fields" class="hidden">
+        <div class="form-group">
+          <label>Bank Name</label>
+          <input type="text" id="g-bankname" class="form-control" placeholder="e.g. State Bank of India">
+        </div>
+        <div class="form-group">
+          <label>Account Number</label>
+          <input type="text" id="g-accnum" class="form-control" placeholder="Enter Account No.">
+        </div>
+        <div class="form-group">
+          <label>IFSC Code</label>
+          <input type="text" id="g-ifsc" class="form-control" placeholder="SBIN0001234">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Reason for Help (Emergency/Wajah)</label>
+        <textarea id="g-reason" class="form-control" rows="3" placeholder="Describe your genuine emergency situation..."></textarea>
+      </div>
+      
+      <button onclick="submitGetHelpRequest()" class="btn btn-outline">Submit Request to Admin</button>
+    </div>
+  </div>
+
+  <!-- 6. REFERRAL ZONE PANEL -->
+  <div id="referral-screen" class="screen">
+    <div class="section-title"><i class="fa-solid fa-arrow-left" onclick="showDashboard()"></i> Referral Overview</div>
+    <div class="fund-card" style="background: linear-gradient(135deg, var(--secondary), #059669)">
+      <h3>Total Referred Members</h3>
+      <h1 id="ref-count-display">0</h1>
+    </div>
+    
+    <div class="section-title"><i class="fa-solid fa-users-viewfinder"></i> Your Referral Code</div>
+    <div class="card" style="text-align:center; font-size:22px; font-weight:800; color:var(--primary); border:2px dashed var(--secondary);" id="user-ref-code-text">
+      TH0000
+    </div>
+
+    <div class="section-title" style="margin-top:20px;"><i class="fa-solid fa-list-ol"></i> Refer History</div>
+    <div class="log-list" id="refer-history-container"></div>
+  </div>
+
+</div>
+
+<!-- Global Modals Framework Templates -->
+<div class="modal-overlay" id="global-modal">
+  <div class="modal-card" id="modal-content-area"></div>
+</div>
+
+<script>
+  const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwEkfVumndA5pIl1jzVLG6msDjvtWSn08hxbl4l7CTUMvZ9JV_OlmCJ5Ck3zZZOifo_vA/exec"; 
+  
+  let currentUser = null;
+  let globalSystemConfig = {};
+
+  window.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+      document.getElementById('intro-screen').classList.remove('active');
+      document.getElementById('intro-screen').style.display = 'none';
+      document.getElementById('login-screen').classList.add('active');
+    }, 2000);
+  });
+
+  function showScreen(screenId) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(screenId).classList.add('active');
+  }
+
+  function showDashboard() { showScreen('dashboard-screen'); }
+
+  async function callBackendAPI(payload) {
+    const response = await fetch(GAS_WEB_APP_URL, {
+      method: 'POST',
+      mode: 'cors',
+      body: JSON.stringify(payload)
+    });
+    return await response.json();
+  }
+
+  async function handleLoginSubmit() {
+    const mobile = document.getElementById('login-mobile').value.trim();
+    if(mobile.length !== 10 || isNaN(mobile)) {
+      alert("Please enter a valid 10-digit Indian Mobile Number.");
+      return;
+    }
+    
+    setLoading('login-btn', true);
+    try {
+      let res = await callBackendAPI({ action: "checkLogin", mobile: mobile });
+      setLoading('login-btn', false);
+      
+      if(res.exists) {
+        currentUser = { id: res.userId, name: res.name, mobile: mobile };
+        loadDashboardLifecycle();
+      } else {
+        openRegistrationPopup(mobile);
+      }
+    } catch(e) {
+      setLoading('login-btn', false);
+      alert("Network Error. Please try again.");
+    }
+  }
+
+  function openRegistrationPopup(mobile) {
+    const modal = document.getElementById('global-modal');
+    document.getElementById('modal-content-area').innerHTML = `
+      <h3 style="color:var(--primary); font-size:18px;">Number Not Registered</h3>
+      <p style="font-size:13px; color:var(--text-muted); margin: 8px 0 20px;">You are not a registered member yet. Fill parameters to continue.</p>
+      <div class="form-group" style="text-align:left;">
+        <label>Full Name</label>
+        <input type="text" id="reg-name" class="form-control" placeholder="Enter Full Name">
+      </div>
+      <div class="form-group" style="text-align:left;">
+        <label>Referral Code (Optional)</label>
+        <input type="text" id="reg-ref" class="form-control" placeholder="e.g. TH4839">
+      </div>
+      <button onclick="submitRegistration('${mobile}')" class="btn btn-secondary">Create Account & Enter</button>
+    `;
+    modal.classList.add('active');
+  }
+
+  async function submitRegistration(mobile) {
+    const name = document.getElementById('reg-name').value.trim();
+    const referral = document.getElementById('reg-ref').value.trim();
+    if(!name) { alert("Name field is mandatory."); return; }
+    
+    document.getElementById('global-modal').classList.remove('active');
+    setLoading('login-btn', true);
+    
+    let res = await callBackendAPI({ action: "registerUser", name: name, mobile: mobile, referral: referral });
+    setLoading('login-btn', false);
+    
+    if(res.success) {
+      currentUser = { id: res.userId, name: res.name, mobile: mobile };
+      
+      document.getElementById('modal-content-area').innerHTML = `
+        <div class="modal-icon"><i class="fa-solid fa-circle-check"></i></div>
+        <h2 style="color:var(--primary);">Welcome to TrueHelp</h2>
+        <p style="font-size:14px; color:var(--text-muted); margin:10px 0;">Account registration completed successfully.</p>
+        <div style="background:var(--bg); padding:15px; border-radius:10px; font-weight:800; font-size:20px; color:var(--primary); letter-spacing:1px; margin:15px 0;">
+          YOUR ID: ${res.userId}
+        </div>
+        <button onclick="closeModalAndGoDashboard()" class="btn">Go To Dashboard</button>
+      `;
+      document.getElementById('global-modal').classList.add('active');
+    } else {
+      alert(res.error);
+    }
+  }
+
+  function closeModalAndGoDashboard() {
+    document.getElementById('global-modal').classList.remove('active');
+    loadDashboardLifecycle();
+  }
+
+  async function loadDashboardLifecycle() {
+    showScreen('dashboard-screen');
+    document.getElementById('user-display-id').innerText = `${currentUser.id} - ${currentUser.name}`;
+    document.getElementById('user-ref-code-text').innerText = currentUser.id;
+    
+    let res = await callBackendAPI({ action: "getDashboardData", userId: currentUser.id });
+    if(res.success) {
+      globalSystemConfig = res;
+      document.getElementById('total-fund-display').innerText = "₹" + Number(res.totalFund).toLocaleString('en-IN', {minimumFractionDigits: 2});
+      
+      let sortedHistory = res.history.sort((a, b) => b.amount - a.amount);
+      
+      const container = document.getElementById('history-log-container');
+      container.innerHTML = "";
+      if(sortedHistory.length === 0) {
+        container.innerHTML = `<div style="text-align:center; padding:20px; color:var(--text-muted); font-size:13px;">No history records found.</div>`;
+      }
+      
+      sortedHistory.forEach(log => {
+        let isProvide = log.type === "Provide Help";
+        let statusClass = log.status === "Success" ? "status-success" : "status-pending";
+        
+        container.innerHTML += `
+          <div class="log-item ${isProvide ? 'provide' : 'get'}">
+            <div class="log-details">
+              <div>${log.type}</div>
+              <p><i class="fa-solid fa-user-circle"></i> ${log.name}</p>
+              <span><i class="fa-solid fa-calendar-day"></i> ${log.date}</span>
+            </div>
+            <div class="log-amount">
+              <div style="color:${isProvide?'var(--secondary)':'#EF4444'}">${isProvide?'+':'-'}₹${log.amount.toLocaleString('en-IN')}</div>
+              <span class="${statusClass}">${log.status}</span>
+            </div>
+          </div>
+        `;
+      });
+      
+      if(res.notification && res.notification.trim() !== "") {
+        triggerGlobalNotification(res.notification);
+      }
+    }
+  }
+
+  function triggerGlobalNotification(text) {
+    document.getElementById('modal-content-area').innerHTML = `
+      <div class="modal-icon alert-icon"><i class="fa-solid fa-bell"></i></div>
+      <h3 style="color:var(--primary); font-size:18px; margin-bottom:10px;">TrueHelp Announcement</h3>
+      <p style="font-size:14px; text-align:center; line-height:1.5; color:var(--text); margin-bottom:20px;">${text}</p>
+      <button onclick="document.getElementById('global-modal').classList.remove('active')" class="btn">Okay</button>
+    `;
+    document.getElementById('global-modal').classList.add('active');
+  }
+
+  function openProvideHelp() {
+    document.getElementById('p-amount').value = "";
+    document.getElementById('p-utr').value = "";
+    document.getElementById('utr-section').classList.add('hidden');
+    showScreen('provide-help-screen');
+  }
+
+  function triggerUPIPayment() {
+    const amt = document.getElementById('p-amount').value.trim();
+    if(!amt || isNaN(amt) || Number(amt) <= 0) { alert("Please input a valid amount."); return; }
+    
+    const upiTarget = globalSystemConfig.upiId;
+    const payeeName = "TrueHelp Admin";
+    const appSelected = document.getElementById('p-method').value;
+    
+    let upiString = `upi://pay?pa=${upiTarget}&pn=${encodeURIComponent(payeeName)}&am=${amt}&cu=INR`;
+    
+    if(appSelected === "PhonePe") {
+      window.location.href = "phonepe://pay?pa=" + upiTarget + "&pn=" + encodeURIComponent(payeeName) + "&am=" + amt + "&cu=INR";
+    } else if(appSelected === "Paytm") {
+      window.location.href = "paytmmp://pay?pa=" + upiTarget + "&pn=" + encodeURIComponent(payeeName) + "&am=" + amt + "&cu=INR";
+    } else {
+      window.location.href = upiString;
+    }
+    
+    setTimeout(() => {
+      document.getElementById('utr-section').classList.remove('hidden');
+    }, 1500);
+  }
+
+  async function submitProvideHelpFinal() {
+    const amt = document.getElementById('p-amount').value.trim();
+    const method = document.getElementById('p-method').value;
+    const utr = document.getElementById('p-utr').value.trim();
+    
+    if(utr.length < 6) { alert("Please provide a valid transaction reference / UTR number."); return; }
+    
+    let res = await callBackendAPI({
+      action: "submitProvideHelp",
+      userId: currentUser.id,
+      amount: amt,
+      method: method,
+      utr: utr
+    });
+    
+    if(res.success) {
+      document.getElementById('modal-content-area').innerHTML = `
+        <div class="modal-icon alert-icon"><i class="fa-solid fa-clock"></i></div>
+        <h3 style="color:#7F6000;">Sent for Admin Approval</h3>
+        <div class="modal-bold-amt">₹${Number(amt).toLocaleString('en-IN')}</div>
+        <p style="font-size:12px; color:var(--text-muted); margin-bottom:10px; text-align:center;">Your transaction is pending verification. Fund will update once approved.</p>
+        <div class="detail-grid">
+          <div class="detail-row"><span>Name:</span> <span>${res.name}</span></div>
+          <div class="detail-row"><span>UTR No:</span> <span>${utr}</span></div>
+          <div class="detail-row"><span>Date Time:</span> <span>${res.dateTime}</span></div>
+        </div>
+        <button onclick="closeModalAndGoDashboard()" class="btn">Close</button>
+      `;
+      document.getElementById('global-modal').classList.add('active');
+    }
+  }
+
+  function openGetHelp() {
+    const currentFund = Number(globalSystemConfig.totalFund || 0);
+    const minimumRequired = Number(globalSystemConfig.minFund || 0);
+    
+    if (currentFund <= minimumRequired) {
+      document.getElementById('modal-content-area').innerHTML = `
+        <div class="modal-icon danger-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+        <h3 style="color:#EF4444; font-size:18px; margin-bottom:10px;">Fund Limit Reached!</h3>
+        <p style="font-size:14px; text-align:center; line-height:1.5; color:var(--text); margin-bottom:20px;">
+          System under maintenance. Current reserve fund has touched its minimum threshold. Please try again later.
+        </p>
+        <button onclick="document.getElementById('global-modal').classList.remove('active')" class="btn" style="background:#EF4444;">Okay</button>
+      `;
+      document.getElementById('global-modal').classList.add('active');
+      return;
+    }
+
+    document.getElementById('g-amount').value = "";
+    document.getElementById('g-upi').value = "";
+    document.getElementById('g-bankname').value = "";
+    document.getElementById('g-accnum').value = "";
+    document.getElementById('g-ifsc').value = "";
+    document.getElementById('g-reason').value = "";
+    showScreen('get-help-screen');
+    toggleGetHelpFields();
+  }
+
+  function toggleGetHelpFields() {
+    const mode = document.getElementById('g-method').value;
+    if(mode === "UPI") {
+      document.getElementById('g-upi-fields').classList.remove('hidden');
+      document.getElementById('g-bank-fields').classList.add('hidden');
+    } else {
+      document.getElementById('g-upi-fields').classList.add('hidden');
+      document.getElementById('g-bank-fields').classList.remove('hidden');
+    }
+  }
+
+  async function submitGetHelpRequest() {
+    const amt = Number(document.getElementById('g-amount').value.trim());
+    const method = document.getElementById('g-method').value;
+    const reason = document.getElementById('g-reason').value.trim();
+    const availableFund = Number(globalSystemConfig.totalFund || 0);
+
+    if(!amt || amt <= 0 || !reason) { alert("Please complete all fields with a valid reason."); return; }
+    
+    // STRICT BALANCE SECURITY RULE FILTER
+    if (amt > availableFund) {
+      if (method === "UPI") {
+        document.getElementById('modal-content-area').innerHTML = `
+          <div class="modal-icon alert-icon"><i class="fa-solid fa-hourglass-half"></i></div>
+          <h3 style="color:#D4AF37; font-size:18px; margin-bottom:10px;">Fund Not Available</h3>
+          <p style="font-size:15px; font-weight:700; text-align:center; line-height:1.5; color:var(--text); margin-bottom:20px;">
+            Fund Not Available Please Wait...
+          </p>
+          <button onclick="document.getElementById('global-modal').classList.remove('active')" class="btn" style="background:#D4AF37;">Okay</button>
+        `;
+      } else {
+        document.getElementById('modal-content-area').innerHTML = `
+          <div class="modal-icon danger-icon"><i class="fa-solid fa-circle-exclamation"></i></div>
+          <h3 style="color:#EF4444; font-size:18px; margin-bottom:10px;">Insufficient Balance!</h3>
+          <p style="font-size:14px; text-align:center; line-height:1.5; color:var(--text); margin-bottom:20px;">
+            Aap available TrueHelp Fund (₹${availableFund.toLocaleString('en-IN')}) se zyada ka help request nahi laga sakte.
+          </p>
+          <button onclick="document.getElementById('global-modal').classList.remove('active')" class="btn" style="background:#EF4444;">Modify Amount</button>
+        `;
+      }
+      document.getElementById('global-modal').classList.add('active');
+      return;
+    }
+    
+    let detailsStr = "";
+    if(method === "UPI") {
+      detailsStr = "UPI: " + document.getElementById('g-upi').value.trim();
+    } else {
+      detailsStr = `Bank: ${document.getElementById('g-bankname').value.trim()} | A/C: ${document.getElementById('g-accnum').value.trim()} | IFSC: ${document.getElementById('g-ifsc').value.trim()}`;
+    }
+    
+    let res = await callBackendAPI({
+      action: "submitGetHelp",
+      userId: currentUser.id,
+      amount: amt,
+      method: method,
+      details: detailsStr,
+      reason: reason
+    });
+    
+    if(res.success) {
+      alert("Your emergency assistance request has been recorded. Processing will commence after Admin Review.");
+      loadDashboardLifecycle();
+    }
+  }
+
+  function openReferralPanel() {
+    showScreen('referral-screen');
+    document.getElementById('ref-count-display').innerText = globalSystemConfig.totalReferrals;
+    
+    const container = document.getElementById('refer-history-container');
+    container.innerHTML = "";
+    if(globalSystemConfig.referHistory.length === 0) {
+      container.innerHTML = `<div style="text-align:center; padding:20px; color:var(--text-muted); font-size:13px;">You haven't referred anyone yet.</div>`;
+      return;
+    }
+    
+    globalSystemConfig.referHistory.forEach(r => {
+      container.innerHTML += `
+        <div class="log-item" style="border-left-color: var(--primary);">
+          <div class="log-details">
+            <div style="font-size:14px; font-weight:700;">${r.name}</div>
+            <span style="font-size:11px;">ID: ${r.uid}</span>
+          </div>
+          <div class="log-amount" style="font-size:11px; color:var(--text-muted);">
+            ${r.date}
+          </div>
+        </div>
+      `;
+    });
+  }
+
+  function setLoading(btnId, isLoad) {
+    const btn = document.getElementById(btnId);
+    if(isLoad) {
+      btn.disabled = true;
+      btn.innerHTML = `<span class="loader"></span>`;
+    } else {
+      btn.disabled = false;
+      btn.innerHTML = "Verify & Proceed";
+    }
+  }
+
+  function logout() {
+    currentUser = null;
+    document.getElementById('login-mobile').value = "";
+    showScreen('login-screen');
+  }
+</script>
+</body>
+</html>
