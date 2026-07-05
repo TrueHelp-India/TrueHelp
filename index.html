@@ -134,6 +134,10 @@
     .full-width-btn { margin-bottom: 25px; }
 
     .section-title { font-size: 16px; font-weight: 700; color: var(--primary); margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+    .search-wrapper { position: relative; margin-bottom: 15px; }
+    .search-wrapper i { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 14px; }
+    .search-wrapper .form-control { padding-left: 40px; }
+    
     .log-list { display: flex; flex-direction: column; gap: 10px; }
     .log-item { background: white; padding: 14px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid #CBD5E1; }
     .log-item.provide { border-left-color: var(--secondary); }
@@ -141,6 +145,7 @@
     .log-details div { font-weight: 700; font-size: 14px; color: var(--text); }
     .log-details p { font-size: 12px; font-weight: 600; color: var(--primary); margin: 2px 0; }
     .log-details span { font-size: 11px; color: var(--text-muted); }
+    .log-details .utr-tag { display: block; font-size: 10px; color: var(--primary); font-weight: 600; margin-top: 2px; background: #E2EFDA; padding: 1px 5px; border-radius: 4px; width: fit-content; }
     .log-amount { text-align: right; }
     .log-amount div { font-weight: 800; font-size: 16px; }
     .log-amount span { font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
@@ -252,6 +257,13 @@
     <button onclick="openReferralPanel()" class="btn full-width-btn"><i class="fa-solid fa-users"></i> Referral Zone</button>
 
     <div class="section-title"><i class="fa-solid fa-clock-rotate-left"></i> Transaction History </div>
+    
+    <!-- ADDED: Real-time Search Box for History Filtering -->
+    <div class="search-wrapper">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input type="text" id="history-search-input" class="form-control" placeholder="Search by Name, User ID, or UTR..." oninput="filterTransactionHistory()">
+    </div>
+    
     <div class="log-list" id="history-log-container"></div>
   </div>
 
@@ -495,8 +507,8 @@
     showScreen('dashboard-screen');
     document.getElementById('user-display-id').innerText = `${currentUser.id} - ${currentUser.name}`;
     document.getElementById('user-ref-code-text').innerText = currentUser.id;
+    document.getElementById('history-search-input').value = ""; // Clear old search query on load
     
-    // Immediate activation of dynamic fetching loader
     toggleFetchOverlay(true);
     
     try {
@@ -507,34 +519,7 @@
         globalSystemConfig = res;
         document.getElementById('total-fund-display').innerText = "₹" + Number(res.totalFund).toLocaleString('en-IN', {minimumFractionDigits: 2});
         
-        // Sorted by Date in Descending order to keep recent updates at the top
-        let sortedHistory = res.history.sort((a, b) => new Date(b.date) - new Date(a.date));
-        
-        const container = document.getElementById('history-log-container');
-        container.innerHTML = "";
-        if(sortedHistory.length === 0) {
-          container.innerHTML = `<div style="text-align:center; padding:20px; color:var(--text-muted); font-size:13px;">No history records found.</div>`;
-        }
-        
-        sortedHistory.forEach(log => {
-          let isProvide = log.type === "Provide Help";
-          let statusClass = log.status === "Success" ? "status-success" : "status-pending";
-          let formattedDate = formatCustomDateTime(log.date);
-          
-          container.innerHTML += `
-            <div class="log-item ${isProvide ? 'provide' : 'get'}">
-              <div class="log-details">
-                <div>${log.type}</div>
-                <p><i class="fa-solid fa-user-circle"></i> ${log.name}</p>
-                <span><i class="fa-solid fa-calendar-day"></i> ${formattedDate}</span>
-              </div>
-              <div class="log-amount">
-                <div style="color:${isProvide?'var(--secondary)':'#EF4444'}">${isProvide?'+':'-'}₹${log.amount.toLocaleString('en-IN')}</div>
-                <span class="${statusClass}">${log.status}</span>
-              </div>
-            </div>
-          `;
-        });
+        renderHistoryList(globalSystemConfig.history);
         
         if(res.notification && res.notification.trim() !== "") {
           triggerGlobalNotification(res.notification);
@@ -544,6 +529,62 @@
       toggleFetchOverlay(false);
       alert("Error loading dashboard data. Please reload.");
     }
+  }
+
+  // REFACTORED: Separate render function to easily inject filtered datasets
+  function renderHistoryList(historyData) {
+    const container = document.getElementById('history-log-container');
+    container.innerHTML = "";
+    
+    let sortedHistory = historyData.sort((a, b) => new Date(b.date) - new Date(a.date));
+    
+    if(sortedHistory.length === 0) {
+      container.innerHTML = `<div style="text-align:center; padding:20px; color:var(--text-muted); font-size:13px;">No history records found.</div>`;
+      return;
+    }
+    
+    sortedHistory.forEach(log => {
+      let isProvide = log.type === "Provide Help";
+      let statusClass = log.status === "Success" ? "status-success" : "status-pending";
+      let formattedDate = formatCustomDateTime(log.date);
+      let utrElement = (log.utr && log.utr.trim() !== "") ? `<span class="utr-tag">UTR: ${log.utr}</span>` : '';
+      
+      container.innerHTML += `
+        <div class="log-item ${isProvide ? 'provide' : 'get'}">
+          <div class="log-details">
+            <div>${log.type}</div>
+            <p><i class="fa-solid fa-user-circle"></i> ${log.name} ${log.userId ? `(${log.userId})` : ''}</p>
+            <span><i class="fa-solid fa-calendar-day"></i> ${formattedDate}</span>
+            ${utrElement}
+          </div>
+          <div class="log-amount">
+            <div style="color:${isProvide?'var(--secondary)':'#EF4444'}">${isProvide?'+':'-'}₹${log.amount.toLocaleString('en-IN')}</div>
+            <span class="${statusClass}">${log.status}</span>
+          </div>
+        </div>
+      `;
+    });
+  }
+
+  // ADDED: Filter engine running local live search matches
+  function filterTransactionHistory() {
+    const query = document.getElementById('history-search-input').value.toLowerCase().trim();
+    if(!globalSystemConfig.history) return;
+    
+    if(query === "") {
+      renderHistoryList(globalSystemConfig.history);
+      return;
+    }
+    
+    const filtered = globalSystemConfig.history.filter(log => {
+      const nameMatch = log.name ? log.name.toLowerCase().includes(query) : false;
+      const idMatch = log.userId ? log.userId.toLowerCase().includes(query) : false;
+      const utrMatch = log.utr ? log.utr.toLowerCase().includes(query) : false;
+      
+      return nameMatch || idMatch || utrMatch;
+    });
+    
+    renderHistoryList(filtered);
   }
 
   function triggerGlobalNotification(text) {
@@ -795,7 +836,6 @@
     const btn = document.getElementById(btnId);
     if(isLoad) {
       btn.disabled = true;
-      // Adds specific color variants matching the theme context
       let extraClass = (btnId === 'login-btn') ? '' : ' loader-white';
       btn.innerHTML = `<span class="loader${extraClass}"></span>`;
     } else {
