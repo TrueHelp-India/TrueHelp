@@ -28,8 +28,44 @@
       box-shadow: 0 0 20px rgba(0,0,0,0.1);
     }
 
-    .screen { display: none; width: 100%; padding: 20px; flex-direction: column; flex-grow: 1; }
+    .screen { 
+      display: none; 
+      width: 100%; 
+      padding: 20px 20px 40px 20px; /* Safe padding at bottom to prevent hiding buttons */
+      flex-direction: column; 
+      flex-grow: 1; 
+      overflow-y: auto; 
+    }
     .screen.active { display: flex; }
+
+    /* --- STICKY FIX FOR ALL TRANSACTIONS SCREEN --- */
+    #all-transactions-screen {
+      padding: 0 0 40px 0 !important;
+      display: none;
+      flex-direction: column;
+      height: 100vh;
+      max-height: 100vh;
+      overflow-y: hidden;
+    }
+    #all-transactions-screen.active {
+      display: flex;
+    }
+    .sticky-history-header {
+      position: -webkit-sticky;
+      position: sticky;
+      top: 0;
+      background-color: var(--bg);
+      z-index: 110;
+      padding: 20px 20px 10px 20px;
+      border-bottom: 1px dashed #CBD5E1;
+      flex-shrink: 0;
+    }
+    .scrollable-history-body {
+      padding: 15px 20px 20px 20px;
+      flex-grow: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
 
     /* --- HTML/CSS VECTOR TRUEHELP LOGO SPLASH --- */
     #intro-screen {
@@ -142,13 +178,12 @@
     .search-input:focus { border-color: var(--primary); }
 
     .log-list { display: flex; flex-direction: column; gap: 10px; }
-    .log-item { background: white; padding: 14px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid #CBD5E1; cursor: pointer; transition: background-color 0.2s; }
-    .log-item:hover { background-color: #F9FAFB; }
+    .log-item { background: white; padding: 14px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid #CBD5E1; cursor: default; transition: background-color 0.2s; }
     .log-item.provide { border-left-color: var(--secondary); }
     .log-item.get { border-left-color: #EF4444; }
     .log-details div { font-weight: 700; font-size: 14px; color: var(--text); }
     .log-details p { font-size: 12px; font-weight: 600; color: var(--primary); margin: 2px 0; }
-    .log-details span { font-size: 11px; color: var(--text-muted); }
+    .log-details span { font-size: 11px; color: var(--text-muted); display: block; margin-top: 2px; font-weight: 500; }
     .log-amount { text-align: right; }
     .log-amount div { font-weight: 800; font-size: 16px; }
     .log-amount span { font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
@@ -259,21 +294,29 @@
     
     <button onclick="openReferralPanel()" class="btn full-width-btn"><i class="fa-solid fa-users"></i> Referral Zone</button>
 
-    <div class="section-title"><i class="fa-solid fa-clock-rotate-left"></i> Recent Contribution </div>
+    <div class="section-title"><i class="fa-solid fa-clock-rotate-left"></i> Recent Public Contribution </div>
     
+    <div class="search-wrapper" style="margin-bottom: 15px;">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input type="text" class="search-input" placeholder="Search by Name, User ID or Txn ID..." onclick="openAllTransactionsScreen()" readonly style="cursor: pointer;">
+    </div>
+
     <div class="log-list" id="dashboard-history-log-container"></div>
-    <button id="view-more-tx-btn" onclick="openAllTransactionsScreen()" class="btn btn-outline hidden" style="margin-top:15px; margin-bottom:15px; padding:10px; font-size:14px;"><i class="fa-solid fa-list"></i> View More Transactions</button>
+    <button id="view-more-tx-btn" onclick="openAllTransactionsScreen()" class="btn btn-outline hidden" style="margin-top:20px; margin-bottom:15px; padding:12px; font-size:14px;"><i class="fa-solid fa-list"></i> View More Contribution </button>
   </div>
 
   <div id="all-transactions-screen" class="screen">
-    <div class="section-title"><i class="fa-solid fa-arrow-left" onclick="showDashboard()"></i> Public Transaction History</div>
-    
-    <div class="search-wrapper">
-      <i class="fa-solid fa-magnifying-glass"></i>
-      <input type="text" id="tx-search-box" class="search-input" placeholder="Search by User Name..." oninput="filterTransactionHistory()">
+    <div class="sticky-history-header">
+      <div class="section-title" style="margin-bottom: 15px;"><i class="fa-solid fa-arrow-left" onclick="showDashboard()"></i> Public Contribution History</div>
+      <div class="search-wrapper" style="margin-bottom: 5px;">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" id="tx-search-box" class="search-input" placeholder="Search by Name, User ID or Txn ID..." oninput="filterTransactionHistory()">
+      </div>
     </div>
     
-    <div class="log-list" id="full-history-log-container"></div>
+    <div class="scrollable-history-body">
+      <div class="log-list" id="full-history-log-container"></div>
+    </div>
   </div>
 
   <div id="provide-help-screen" class="screen">
@@ -295,7 +338,7 @@
       <div id="utr-section" class="hidden">
         <div class="form-group" style="border-top: 1px dashed #CBD5E1; padding-top: 15px;">
           <label style="color:#EF4444;">Paste UTR / Reference Number</label>
-          <input type="text" id="p-utr" class="form-control" placeholder="Enter Reference No.">
+          <input type="text" id="p-utr" class="form-control" placeholder="Enter UTR /  Reference No.">
         </div>
         <button onclick="submitProvideHelpFinal()" class="btn" id="p-submit-btn">Submit Verification Proof</button>
       </div>
@@ -408,7 +451,6 @@
     }
   }
 
-  // FIXED DATE & TIME PARSING FUNCTION (Locks Asia/Kolkata timezone mapping dynamically)
   function formatCustomDateTime(dateInput) {
     if (!dateInput) return "";
     
@@ -417,14 +459,12 @@
     if (typeof dateInput === 'string') {
       let cleanInput = dateInput.replace(/\|/g, '').trim();
       
-      // Dynamic Parse Module to capture "D/M/YYYY" or "DD/MM/YYYY" standard from Google Sheets
       if (cleanInput.includes('/') && cleanInput.includes(' ')) {
         let parts = cleanInput.split(' ');
         let dateParts = parts[0].split('/');
         let timeParts = parts[1].split(':');
         
         if (dateParts.length === 3) {
-          // Detect order by year position
           let day, monthIdx, year;
           if (dateParts[2].length === 4) {
             day = parseInt(dateParts[0], 10);
@@ -443,7 +483,6 @@
           dateObj = new Date(year, monthIdx, day, hours, minutes, seconds);
         }
       }
-      // Alternate fallback logic if string blocks use hyphens "yyyy-MM-dd HH:mm:ss"
       else if (cleanInput.includes(' ') && cleanInput.includes('-')) {
         let parts = cleanInput.split(' ');
         let dateParts = parts[0].split('-');
@@ -475,7 +514,6 @@
     const finalMonth = months[dateObj.getMonth()];
     const finalYear = dateObj.getFullYear();
 
-    // Lock conversion directly to Indian Standard Time context bounds
     let options = { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true };
     let timeString = dateObj.toLocaleTimeString('en-US', options);
     
@@ -487,6 +525,25 @@
     let finalMinutes = String(timeNumbers[1]).padStart(2, '0');
 
     return `${finalDay}-${finalMonth}-${finalYear} | ${formattedHours}:${finalMinutes} ${ampm}`;
+  }
+
+  function resolveTransactionIDValue(log) {
+    if (!log) return "N/A";
+    
+    let transactionIdValue = log.transactionId || log.transactionID || log.txnId || log.txnID || log.txId || log.id || log.Id || log.ID || log.Transaction || log.transaction;
+    
+    if (transactionIdValue && String(transactionIdValue).trim() !== "" && String(transactionIdValue).trim().toLowerCase() !== "null") {
+      return String(transactionIdValue).trim();
+    }
+    
+    let rawDetails = log.utr || log.utrNo || log.utrno || log.UTR || log.reference || log.details || "N/A";
+    let val = String(rawDetails).trim();
+    if (val.startsWith("UPI:")) {
+      val = val.substring(4).trim();
+    } else if (val.startsWith("Bank:")) {
+      val = val.substring(5).trim();
+    }
+    return val === "" ? "N/A" : val;
   }
 
   async function callBackendAPI(payload) {
@@ -602,7 +659,6 @@
           return true;
         }).sort((a, b) => new Date(b.date) - new Date(a.date));
 
-        // Dashboard renders top 6 rows
         renderDashboardTransactionRows(masterHistoryRecords);
         
         if(res.notification && res.notification.trim() !== "") {
@@ -615,45 +671,6 @@
     }
   }
 
-  // DEDICATED POPUP FUNCTION FOR CLICKED LOG ITEMS
-  function showTransactionPopup(log) {
-    if (!log) return;
-    
-    let isProvide = log.type === "Provide Help";
-    let formattedDate = formatCustomDateTime(log.date);
-    let amt = Number(log.amount);
-
-    if (isProvide) {
-      document.getElementById('modal-content-area').innerHTML = `
-        <div class="modal-icon alert-icon"><i class="fa-solid fa-clock"></i></div>
-        <h3 style="color:#7F6000;">Sent for Admin Approval</h3>
-        <div class="modal-bold-amt">₹${Math.abs(amt).toLocaleString('en-IN')}</div>
-        <p style="font-size:12px; color:var(--text-muted); margin-bottom:10px; text-align:center;">Your transaction is pending verification. Fund will update once approved.</p>
-        <div class="detail-grid">
-          <div class="detail-row"><span>Name:</span> <span>${log.name}</span></div>
-          <div class="detail-row"><span>UTR No:</span> <span>${log.utr || 'N/A'}</span></div>
-          <div class="detail-row"><span>Date Time:</span> <span>${formattedDate}</span></div>
-        </div>
-        <button onclick="document.getElementById('global-modal').classList.remove('active')" class="btn">Close</button>
-      `;
-    } else {
-      document.getElementById('modal-content-area').innerHTML = `
-        <div class="modal-icon alert-icon"><i class="fa-solid fa-hourglass-half"></i></div>
-        <h3 style="color:#7F6000;">Get Help Request Success</h3>
-        <p style="font-size:13px; color:var(--text-muted); margin-bottom:12px; text-align:center;">Please Wait For Approval. System under validation status review.</p>
-        <div class="modal-bold-amt" style="color:#EF4444;">₹${Math.abs(amt).toLocaleString('en-IN')}</div>
-        <div class="detail-grid">
-          <div class="detail-row"><span>Name:</span> <span>${log.name}</span></div>
-          <div class="detail-row"><span>Get Help Amount:</span> <span>₹${Math.abs(amt).toLocaleString('en-IN')}</span></div>
-          <div class="detail-row"><span>Date:</span> <span>${formattedDate}</span></div>
-        </div>
-        <button onclick="document.getElementById('global-modal').classList.remove('active')" class="btn">Close</button>
-      `;
-    }
-    document.getElementById('global-modal').classList.add('active');
-  }
-
-  // Dashboard context - Max 6 rows limit + Date Hidden + Onclick Added
   function renderDashboardTransactionRows(records) {
     const container = document.getElementById('dashboard-history-log-container');
     const viewMoreBtn = document.getElementById('view-more-tx-btn');
@@ -665,44 +682,48 @@
       return;
     }
 
-    // Capture first 6 records
-    const dashboardLimitedRecords = records.slice(0, 6);
+    // Displays exactly up to 4 contribution rows maximum
+    const dashboardLimitedRecords = records.slice(0, 4);
 
-    dashboardLimitedRecords.forEach((log, index) => {
+    dashboardLimitedRecords.forEach((log) => {
       let isProvide = log.type === "Provide Help";
       let statusClass = log.status === "Success" ? "status-success" : "status-pending";
       
-      // Creating temporary string to safely pass object structure to function call
+      let activeTxnID = resolveTransactionIDValue(log);
+      
       container.innerHTML += `
-        <div class="log-item ${isProvide ? 'provide' : 'get'}" onclick='showTransactionPopup(masterHistoryRecords[${index}])'>
+        <div class="log-item ${isProvide ? 'provide' : 'get'}">
           <div class="log-details">
             <div>${log.type}</div>
             <p><i class="fa-solid fa-user-circle"></i> ${log.name}</p>
+            <span>Txn ID: ${activeTxnID}</span>
           </div>
           <div class="log-amount">
-            <div style="color:${isProvide?'var(--secondary)':'#EF4444'}">${isProvide?'+':'-'}₹${Math.abs(log.amount).toLocaleString('en-IN')}</div>
+            <div style="color:${isProvide?'var(--secondary)':'#EF4444'}">₹${Math.abs(log.amount).toLocaleString('en-IN')}</div>
             <span class="${statusClass}">${log.status}</span>
           </div>
         </div>
       `;
     });
 
-    // If records count exceeds 6, trigger show button visibility
-    if (records.length > 6) {
+    if (records.length > 4) {
       viewMoreBtn.classList.remove('hidden');
     } else {
       viewMoreBtn.classList.add('hidden');
     }
   }
 
-  // Opens Dedicated History Screen Frame
   function openAllTransactionsScreen() {
     showScreen('all-transactions-screen');
     document.getElementById('tx-search-box').value = ""; 
     renderFullTransactionRows(masterHistoryRecords);
+    
+    // Auto focus the input field when redirecting to new locked header screen
+    setTimeout(() => {
+      document.getElementById('tx-search-box').focus();
+    }, 50);
   }
 
-  // Dedicated Full Transaction renderer logic inside Full Screen Node (Date Hidden + Onclick Added)
   function renderFullTransactionRows(records) {
     const container = document.getElementById('full-history-log-container');
     container.innerHTML = "";
@@ -715,16 +736,18 @@
     records.forEach((log) => {
       let isProvide = log.type === "Provide Help";
       let statusClass = log.status === "Success" ? "status-success" : "status-pending";
-      let originalIndex = masterHistoryRecords.indexOf(log);
+      
+      let activeTxnID = resolveTransactionIDValue(log);
       
       container.innerHTML += `
-        <div class="log-item ${isProvide ? 'provide' : 'get'}" onclick='showTransactionPopup(masterHistoryRecords[${originalIndex}])'>
+        <div class="log-item ${isProvide ? 'provide' : 'get'}">
           <div class="log-details">
             <div>${log.type}</div>
             <p><i class="fa-solid fa-user-circle"></i> ${log.name}</p>
+            <span>Txn ID: ${activeTxnID}</span>
           </div>
           <div class="log-amount">
-            <div style="color:${isProvide?'var(--secondary)':'#EF4444'}">${isProvide?'+':'-'}₹${Math.abs(log.amount).toLocaleString('en-IN')}</div>
+            <div style="color:${isProvide?'var(--secondary)':'#EF4444'}">₹${Math.abs(log.amount).toLocaleString('en-IN')}</div>
             <span class="${statusClass}">${log.status}</span>
           </div>
         </div>
@@ -739,9 +762,19 @@
       return;
     }
     
-    const filtered = masterHistoryRecords.filter(log => 
-      log.name.toLowerCase().includes(searchVal)
-    );
+    const filtered = masterHistoryRecords.filter(log => {
+      let matchName = log.name ? log.name.toLowerCase().includes(searchVal) : false;
+      let matchUserId = log.userId ? log.userId.toLowerCase().includes(searchVal) : false;
+      let matchTxID = false;
+      
+      let activeTxnID = resolveTransactionIDValue(log);
+      if (activeTxnID && activeTxnID !== "N/A") {
+        matchTxID = activeTxnID.toLowerCase().includes(searchVal);
+      }
+      
+      return matchName || matchUserId || matchTxID;
+    });
+    
     renderFullTransactionRows(filtered);
   }
 
@@ -792,7 +825,7 @@
     
     if(utr.length < 6) { alert("Please provide a valid transaction reference / UTR number."); return; }
     
-    setLoading('p-submit-btn', true, "Submit Verification Proof");
+    setLoading('p-submit-btn', true, "SUBMIT");
     try {
       let res = await callBackendAPI({
         action: "submitProvideHelp",
@@ -801,18 +834,21 @@
         method: method,
         utr: utr
       });
-      setLoading('p-submit-btn', false, "Submit Verification Proof");
+      setLoading('p-submit-btn', false, "Submit");
       
       if(res.success) {
         let displayDateTime = formatCustomDateTime(res.dateTime);
+        let resTxnID = res.transactionId || res.transactionID || res.txnId || res.txId || "Pending Verification";
+        
         document.getElementById('modal-content-area').innerHTML = `
           <div class="modal-icon alert-icon"><i class="fa-solid fa-clock"></i></div>
           <h3 style="color:#7F6000;">Sent for Admin Approval</h3>
           <div class="modal-bold-amt">₹${Number(amt).toLocaleString('en-IN')}</div>
           <p style="font-size:12px; color:var(--text-muted); margin-bottom:10px; text-align:center;">Your transaction is pending verification. Fund will update once approved.</p>
           <div class="detail-grid">
-            <div class="detail-row"><span>Name:</span> <span>${res.name}</span></div>
-            <div class="detail-row"><span>UTR No:</span> <span>${utr}</span></div>
+            <div class="detail-row"><span>Name:</span> <span>${res.name || currentUser.name}</span></div>
+            <div class="detail-row"><span>Transaction ID:</span> <span>${resTxnID}</span></div>
+            <div class="detail-row"><span>UTR Number:</span> <span>${utr}</span></div>
             <div class="detail-row"><span>Date Time:</span> <span>${displayDateTime}</span></div>
           </div>
           <button onclick="closeModalAndGoDashboard()" class="btn">Close</button>
