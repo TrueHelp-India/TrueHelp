@@ -134,18 +134,21 @@
     .full-width-btn { margin-bottom: 25px; }
 
     .section-title { font-size: 16px; font-weight: 700; color: var(--primary); margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
-    .search-wrapper { position: relative; margin-bottom: 15px; }
-    .search-wrapper i { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 14px; }
-    .search-wrapper .form-control { padding-left: 40px; }
     
+    /* Search Bar Design Element */
+    .search-wrapper { margin-bottom: 15px; position: relative; }
+    .search-wrapper i { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 14px; }
+    .search-input { width: 100%; padding: 10px 16px 10px 38px; border: 1.5px solid #E5E7EB; border-radius: 10px; font-size: 14px; outline: none; background: #FFFFFF; transition: 0.2s; }
+    .search-input:focus { border-color: var(--primary); }
+
     .log-list { display: flex; flex-direction: column; gap: 10px; }
-    .log-item { background: white; padding: 14px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid #CBD5E1; }
+    .log-item { background: white; padding: 14px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid #CBD5E1; cursor: pointer; transition: background-color 0.2s; }
+    .log-item:hover { background-color: #F9FAFB; }
     .log-item.provide { border-left-color: var(--secondary); }
     .log-item.get { border-left-color: #EF4444; }
     .log-details div { font-weight: 700; font-size: 14px; color: var(--text); }
     .log-details p { font-size: 12px; font-weight: 600; color: var(--primary); margin: 2px 0; }
     .log-details span { font-size: 11px; color: var(--text-muted); }
-    .log-details .utr-tag { display: block; font-size: 10px; color: var(--primary); font-weight: 600; margin-top: 2px; background: #E2EFDA; padding: 1px 5px; border-radius: 4px; width: fit-content; }
     .log-amount { text-align: right; }
     .log-amount div { font-weight: 800; font-size: 16px; }
     .log-amount span { font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
@@ -159,7 +162,7 @@
     .modal-icon { width: 60px; height: 60px; background: #E2EFDA; color: var(--secondary); border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 28px; margin: 0 auto 15px; }
     .modal-icon.alert-icon { background: #FFF2CC; color: #D4AF37; }
     .modal-icon.danger-icon { background: #FEE2E2; color: #EF4444; }
-    .modal-bold-amt { font-size: 32px; font-weight: 800; color: var(--text); margin: 10px 0; }
+    .modal-bold-amt { font-size: 32px; font-weight: 800; color: var(--text); margin: 10px 0 0; }
     
     .detail-grid { text-align: left; background: #F9FAFB; padding: 14px; border-radius: 10px; margin: 15px 0; font-size: 13px; display: flex; flex-direction: column; gap: 8px; }
     .detail-row { display: flex; justify-content: space-between; }
@@ -256,15 +259,21 @@
     
     <button onclick="openReferralPanel()" class="btn full-width-btn"><i class="fa-solid fa-users"></i> Referral Zone</button>
 
-    <div class="section-title"><i class="fa-solid fa-clock-rotate-left"></i> Transaction History </div>
+    <div class="section-title"><i class="fa-solid fa-clock-rotate-left"></i> Recent Contribution </div>
     
-    <!-- ADDED: Real-time Search Box for History Filtering -->
+    <div class="log-list" id="dashboard-history-log-container"></div>
+    <button id="view-more-tx-btn" onclick="openAllTransactionsScreen()" class="btn btn-outline hidden" style="margin-top:15px; margin-bottom:15px; padding:10px; font-size:14px;"><i class="fa-solid fa-list"></i> View More Transactions</button>
+  </div>
+
+  <div id="all-transactions-screen" class="screen">
+    <div class="section-title"><i class="fa-solid fa-arrow-left" onclick="showDashboard()"></i> Public Transaction History</div>
+    
     <div class="search-wrapper">
       <i class="fa-solid fa-magnifying-glass"></i>
-      <input type="text" id="history-search-input" class="form-control" placeholder="Search by Name, User ID, or UTR..." oninput="filterTransactionHistory()">
+      <input type="text" id="tx-search-box" class="search-input" placeholder="Search by User Name..." oninput="filterTransactionHistory()">
     </div>
     
-    <div class="log-list" id="history-log-container"></div>
+    <div class="log-list" id="full-history-log-container"></div>
   </div>
 
   <div id="provide-help-screen" class="screen">
@@ -363,11 +372,12 @@
 </div>
 
 <script>
-  const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwEkfVumndA5pIl1jzVLG6msDjvtWSn08hxbl4l7CTUMvZ9JV_OlmCJ5Ck3zZZOifo_vA/exec"; 
+  const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwjrXMjUryMA8ZFDvjfCRNNkLRjK58JmshSa2CpLhjY-IMd_RBGmte-6Sut7IAu9r5r2w/exec"; 
   
   let currentUser = null;
   let globalSystemConfig = {};
   let autoReferredCode = "";
+  let masterHistoryRecords = []; 
 
   window.addEventListener('DOMContentLoaded', () => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -398,24 +408,85 @@
     }
   }
 
+  // FIXED DATE & TIME PARSING FUNCTION (Locks Asia/Kolkata timezone mapping dynamically)
   function formatCustomDateTime(dateInput) {
     if (!dateInput) return "";
-    const dateObj = new Date(dateInput);
-    if (isNaN(dateObj.getTime())) return dateInput;
+    
+    let dateObj;
+    
+    if (typeof dateInput === 'string') {
+      let cleanInput = dateInput.replace(/\|/g, '').trim();
+      
+      // Dynamic Parse Module to capture "D/M/YYYY" or "DD/MM/YYYY" standard from Google Sheets
+      if (cleanInput.includes('/') && cleanInput.includes(' ')) {
+        let parts = cleanInput.split(' ');
+        let dateParts = parts[0].split('/');
+        let timeParts = parts[1].split(':');
+        
+        if (dateParts.length === 3) {
+          // Detect order by year position
+          let day, monthIdx, year;
+          if (dateParts[2].length === 4) {
+            day = parseInt(dateParts[0], 10);
+            monthIdx = parseInt(dateParts[1], 10) - 1;
+            year = parseInt(dateParts[2], 10);
+          } else if (dateParts[0].length === 4) {
+            year = parseInt(dateParts[0], 10);
+            monthIdx = parseInt(dateParts[1], 10) - 1;
+            day = parseInt(dateParts[2], 10);
+          }
+          
+          let hours = parseInt(timeParts[0] || 0, 10);
+          let minutes = parseInt(timeParts[1] || 0, 10);
+          let seconds = parseInt(timeParts[2] || 0, 10);
+          
+          dateObj = new Date(year, monthIdx, day, hours, minutes, seconds);
+        }
+      }
+      // Alternate fallback logic if string blocks use hyphens "yyyy-MM-dd HH:mm:ss"
+      else if (cleanInput.includes(' ') && cleanInput.includes('-')) {
+        let parts = cleanInput.split(' ');
+        let dateParts = parts[0].split('-');
+        let timeParts = parts[1].split(':');
+        
+        if (dateParts.length === 3) {
+          let year = parseInt(dateParts[0], 10);
+          let monthIdx = parseInt(dateParts[1], 10) - 1;
+          let day = parseInt(dateParts[2], 10);
+          let hours = parseInt(timeParts[0] || 0, 10);
+          let minutes = parseInt(timeParts[1] || 0, 10);
+          let seconds = parseInt(timeParts[2] || 0, 10);
+          
+          dateObj = new Date(year, monthIdx, day, hours, minutes, seconds);
+        }
+      }
+    }
 
-    const day = String(dateObj.getDate()).padStart(2, '0');
+    if (!dateObj || isNaN(dateObj.getTime())) {
+      dateObj = new Date(dateInput);
+    }
+
+    if (isNaN(dateObj.getTime())) {
+      return dateInput;
+    }
+
+    const finalDay = String(dateObj.getDate()).padStart(2, '0');
     const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-    const month = months[dateObj.getMonth()];
-    const year = dateObj.getFullYear();
+    const finalMonth = months[dateObj.getMonth()];
+    const finalYear = dateObj.getFullYear();
 
-    let hours = dateObj.getHours();
-    const minutes = String(dateObj.getMinutes()).padStart(2, '0');
-    const ampm = hours >= 12 ? 'PM' : 'AM';
-    hours = hours % 12;
-    hours = hours ? hours : 12;
-    const formattedHours = String(hours).padStart(2, '0');
+    // Lock conversion directly to Indian Standard Time context bounds
+    let options = { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true };
+    let timeString = dateObj.toLocaleTimeString('en-US', options);
+    
+    let timeParts = timeString.split(' ');
+    let timeNumbers = timeParts[0].split(':');
+    let ampm = timeParts[1] || "AM";
+    
+    let formattedHours = String(timeNumbers[0]).padStart(2, '0');
+    let finalMinutes = String(timeNumbers[1]).padStart(2, '0');
 
-    return `${day}-${month}-${year} | ${formattedHours}:${minutes} ${ampm}`;
+    return `${finalDay}-${finalMonth}-${finalYear} | ${formattedHours}:${finalMinutes} ${ampm}`;
   }
 
   async function callBackendAPI(payload) {
@@ -507,7 +578,6 @@
     showScreen('dashboard-screen');
     document.getElementById('user-display-id').innerText = `${currentUser.id} - ${currentUser.name}`;
     document.getElementById('user-ref-code-text').innerText = currentUser.id;
-    document.getElementById('history-search-input').value = ""; // Clear old search query on load
     
     toggleFetchOverlay(true);
     
@@ -519,7 +589,21 @@
         globalSystemConfig = res;
         document.getElementById('total-fund-display').innerText = "₹" + Number(res.totalFund).toLocaleString('en-IN', {minimumFractionDigits: 2});
         
-        renderHistoryList(globalSystemConfig.history);
+        masterHistoryRecords = (res.history || []).filter(log => {
+          if (!log || !log.type || !log.name) return false;
+          
+          let typeLower = log.type.trim().toLowerCase();
+          let nameLower = log.name.trim().toLowerCase();
+          let amt = Number(log.amount);
+
+          if (typeLower === "type" || nameLower === "name" || nameLower === "truehelp member" || isNaN(amt) || amt === 0) {
+            return false;
+          }
+          return true;
+        }).sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        // Dashboard renders top 6 rows
+        renderDashboardTransactionRows(masterHistoryRecords);
         
         if(res.notification && res.notification.trim() !== "") {
           triggerGlobalNotification(res.notification);
@@ -531,34 +615,116 @@
     }
   }
 
-  // REFACTORED: Separate render function to easily inject filtered datasets
-  function renderHistoryList(historyData) {
-    const container = document.getElementById('history-log-container');
+  // DEDICATED POPUP FUNCTION FOR CLICKED LOG ITEMS
+  function showTransactionPopup(log) {
+    if (!log) return;
+    
+    let isProvide = log.type === "Provide Help";
+    let formattedDate = formatCustomDateTime(log.date);
+    let amt = Number(log.amount);
+
+    if (isProvide) {
+      document.getElementById('modal-content-area').innerHTML = `
+        <div class="modal-icon alert-icon"><i class="fa-solid fa-clock"></i></div>
+        <h3 style="color:#7F6000;">Sent for Admin Approval</h3>
+        <div class="modal-bold-amt">₹${Math.abs(amt).toLocaleString('en-IN')}</div>
+        <p style="font-size:12px; color:var(--text-muted); margin-bottom:10px; text-align:center;">Your transaction is pending verification. Fund will update once approved.</p>
+        <div class="detail-grid">
+          <div class="detail-row"><span>Name:</span> <span>${log.name}</span></div>
+          <div class="detail-row"><span>UTR No:</span> <span>${log.utr || 'N/A'}</span></div>
+          <div class="detail-row"><span>Date Time:</span> <span>${formattedDate}</span></div>
+        </div>
+        <button onclick="document.getElementById('global-modal').classList.remove('active')" class="btn">Close</button>
+      `;
+    } else {
+      document.getElementById('modal-content-area').innerHTML = `
+        <div class="modal-icon alert-icon"><i class="fa-solid fa-hourglass-half"></i></div>
+        <h3 style="color:#7F6000;">Get Help Request Success</h3>
+        <p style="font-size:13px; color:var(--text-muted); margin-bottom:12px; text-align:center;">Please Wait For Approval. System under validation status review.</p>
+        <div class="modal-bold-amt" style="color:#EF4444;">₹${Math.abs(amt).toLocaleString('en-IN')}</div>
+        <div class="detail-grid">
+          <div class="detail-row"><span>Name:</span> <span>${log.name}</span></div>
+          <div class="detail-row"><span>Get Help Amount:</span> <span>₹${Math.abs(amt).toLocaleString('en-IN')}</span></div>
+          <div class="detail-row"><span>Date:</span> <span>${formattedDate}</span></div>
+        </div>
+        <button onclick="document.getElementById('global-modal').classList.remove('active')" class="btn">Close</button>
+      `;
+    }
+    document.getElementById('global-modal').classList.add('active');
+  }
+
+  // Dashboard context - Max 6 rows limit + Date Hidden + Onclick Added
+  function renderDashboardTransactionRows(records) {
+    const container = document.getElementById('dashboard-history-log-container');
+    const viewMoreBtn = document.getElementById('view-more-tx-btn');
     container.innerHTML = "";
-    
-    let sortedHistory = historyData.sort((a, b) => new Date(b.date) - new Date(a.date));
-    
-    if(sortedHistory.length === 0) {
+
+    if(records.length === 0) {
       container.innerHTML = `<div style="text-align:center; padding:20px; color:var(--text-muted); font-size:13px;">No history records found.</div>`;
+      viewMoreBtn.classList.add('hidden');
       return;
     }
-    
-    sortedHistory.forEach(log => {
+
+    // Capture first 6 records
+    const dashboardLimitedRecords = records.slice(0, 6);
+
+    dashboardLimitedRecords.forEach((log, index) => {
       let isProvide = log.type === "Provide Help";
       let statusClass = log.status === "Success" ? "status-success" : "status-pending";
-      let formattedDate = formatCustomDateTime(log.date);
-      let utrElement = (log.utr && log.utr.trim() !== "") ? `<span class="utr-tag">UTR: ${log.utr}</span>` : '';
       
+      // Creating temporary string to safely pass object structure to function call
       container.innerHTML += `
-        <div class="log-item ${isProvide ? 'provide' : 'get'}">
+        <div class="log-item ${isProvide ? 'provide' : 'get'}" onclick='showTransactionPopup(masterHistoryRecords[${index}])'>
           <div class="log-details">
             <div>${log.type}</div>
-            <p><i class="fa-solid fa-user-circle"></i> ${log.name} ${log.userId ? `(${log.userId})` : ''}</p>
-            <span><i class="fa-solid fa-calendar-day"></i> ${formattedDate}</span>
-            ${utrElement}
+            <p><i class="fa-solid fa-user-circle"></i> ${log.name}</p>
           </div>
           <div class="log-amount">
-            <div style="color:${isProvide?'var(--secondary)':'#EF4444'}">${isProvide?'+':'-'}₹${log.amount.toLocaleString('en-IN')}</div>
+            <div style="color:${isProvide?'var(--secondary)':'#EF4444'}">${isProvide?'+':'-'}₹${Math.abs(log.amount).toLocaleString('en-IN')}</div>
+            <span class="${statusClass}">${log.status}</span>
+          </div>
+        </div>
+      `;
+    });
+
+    // If records count exceeds 6, trigger show button visibility
+    if (records.length > 6) {
+      viewMoreBtn.classList.remove('hidden');
+    } else {
+      viewMoreBtn.classList.add('hidden');
+    }
+  }
+
+  // Opens Dedicated History Screen Frame
+  function openAllTransactionsScreen() {
+    showScreen('all-transactions-screen');
+    document.getElementById('tx-search-box').value = ""; 
+    renderFullTransactionRows(masterHistoryRecords);
+  }
+
+  // Dedicated Full Transaction renderer logic inside Full Screen Node (Date Hidden + Onclick Added)
+  function renderFullTransactionRows(records) {
+    const container = document.getElementById('full-history-log-container');
+    container.innerHTML = "";
+
+    if(records.length === 0) {
+      container.innerHTML = `<div style="text-align:center; padding:20px; color:var(--text-muted); font-size:13px;">No matching logs found.</div>`;
+      return;
+    }
+
+    records.forEach((log) => {
+      let isProvide = log.type === "Provide Help";
+      let statusClass = log.status === "Success" ? "status-success" : "status-pending";
+      let originalIndex = masterHistoryRecords.indexOf(log);
+      
+      container.innerHTML += `
+        <div class="log-item ${isProvide ? 'provide' : 'get'}" onclick='showTransactionPopup(masterHistoryRecords[${originalIndex}])'>
+          <div class="log-details">
+            <div>${log.type}</div>
+            <p><i class="fa-solid fa-user-circle"></i> ${log.name}</p>
+          </div>
+          <div class="log-amount">
+            <div style="color:${isProvide?'var(--secondary)':'#EF4444'}">${isProvide?'+':'-'}₹${Math.abs(log.amount).toLocaleString('en-IN')}</div>
             <span class="${statusClass}">${log.status}</span>
           </div>
         </div>
@@ -566,25 +732,17 @@
     });
   }
 
-  // ADDED: Filter engine running local live search matches
   function filterTransactionHistory() {
-    const query = document.getElementById('history-search-input').value.toLowerCase().trim();
-    if(!globalSystemConfig.history) return;
-    
-    if(query === "") {
-      renderHistoryList(globalSystemConfig.history);
+    const searchVal = document.getElementById('tx-search-box').value.toLowerCase().trim();
+    if(!searchVal) {
+      renderFullTransactionRows(masterHistoryRecords);
       return;
     }
     
-    const filtered = globalSystemConfig.history.filter(log => {
-      const nameMatch = log.name ? log.name.toLowerCase().includes(query) : false;
-      const idMatch = log.userId ? log.userId.toLowerCase().includes(query) : false;
-      const utrMatch = log.utr ? log.utr.toLowerCase().includes(query) : false;
-      
-      return nameMatch || idMatch || utrMatch;
-    });
-    
-    renderHistoryList(filtered);
+    const filtered = masterHistoryRecords.filter(log => 
+      log.name.toLowerCase().includes(searchVal)
+    );
+    renderFullTransactionRows(filtered);
   }
 
   function triggerGlobalNotification(text) {
@@ -785,12 +943,19 @@
     
     const container = document.getElementById('refer-history-container');
     container.innerHTML = "";
-    if(globalSystemConfig.referHistory.length === 0) {
+
+    let validReferHistory = (globalSystemConfig.referHistory || []).filter(r => {
+      if(!r || !r.name) return false;
+      let nameLower = r.name.trim().toLowerCase();
+      return nameLower !== "" && nameLower !== "name";
+    });
+    
+    if(validReferHistory.length === 0) {
       container.innerHTML = `<div style="text-align:center; padding:20px; color:var(--text-muted); font-size:13px;">You haven't referred anyone yet.</div>`;
       return;
     }
     
-    let sortedReferHistory = globalSystemConfig.referHistory.sort((a, b) => new Date(b.date) - new Date(a.date));
+    let sortedReferHistory = validReferHistory.sort((a, b) => new Date(b.date) - new Date(a.date));
     
     sortedReferHistory.forEach(r => {
       let formattedRefDate = formatCustomDateTime(r.date);
